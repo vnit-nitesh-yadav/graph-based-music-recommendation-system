@@ -1,13 +1,47 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function Sidebar(props: any) {
-    let text = useState("asda");
+    const [recommendations, setRecommendations] = useState<string[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [showRecs, setShowRecs] = useState(false);
 
-    const handleOnClick = (e) => {
-        var div = document.getElementById("recs");
-        div.style.visibility = "hidden";
-        var div2 = document.getElementById("recs2");
-        div2.style.visibility = "visible";
+    useEffect(() => {
+        if (props.selectedSong) {
+            generateRecommendations(props.selectedSong);
+        }
+    }, [props.selectedSong]);
+
+    const generateRecommendations = async (song: string) => {
+        try {
+            setLoading(true);
+            setError(null);
+            setShowRecs(true);
+            
+            const response = await fetch(`/api/recommendations?song=${encodeURIComponent(song)}`);
+            const data = await response.json();
+            
+            if (data.error) {
+                setError(data.error);
+                setRecommendations([]);
+            } else {
+                setRecommendations(data.recommendations);
+            }
+        } catch (err) {
+            setError("Failed to generate recommendations");
+            setRecommendations([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleOnClick = () => {
+        if (props.selectedSong) {
+            generateRecommendations(props.selectedSong);
+        } else {
+            setError("Please select a song first by clicking on a song node");
+            setShowRecs(true);
+        }
     };
 
     return (
@@ -21,21 +55,32 @@ export default function Sidebar(props: any) {
                             </svg>
                             <span className="font-semibold text-xl tracking-tight">Dashboard</span>
                         </div>
-                        <div className="border border-white-200 rounded-lg px-3 py-2  cursor-pointer hover:bg-gray-700 hover:text-gray-200 w-full text-center" onClick={handleOnClick}>
-                            Click to generate
+                        <div className="text-white text-sm mb-2">
+                            {props.selectedSong ? `Selected: ${props.selectedSong}` : "Click a song to select"}
                         </div>
-                        <div className="border border-white-200 rounded-lg px-3 py-2 w-full h-full text-center flex-1">
-                            <div id="recs" className="visible">Reccommendations will show here!</div>
-                            <div id="recs2" className="invisible">1. Dirty Little Thing<br></br>
-                            2. Hate Love<br></br>
-                            3. Survive<br></br>
-                            4. In God&apos;s Eyes<br></br>
-                            5. It&apos;s Over<br></br>
-                            </div>
+                        <div className="border border-white-200 rounded-lg px-3 py-2  cursor-pointer hover:bg-gray-700 hover:text-gray-200 w-full text-center" onClick={handleOnClick}>
+                            {loading ? "Loading..." : "Generate Recommendations"}
+                        </div>
+                        <div className="border border-white-200 rounded-lg px-3 py-2 w-full h-full text-center flex-1 text-white overflow-auto">
+                            {!showRecs && <div>Click &apos;Generate Recommendations&apos; to get started!</div>}
+                            {showRecs && error && (
+                                <div className="text-red-400">{error}</div>
+                            )}
+                            {showRecs && !error && recommendations.length > 0 && (
+                                <div>
+                                    <div className="font-bold mb-2">Top 5 Recommendations:</div>
+                                    {recommendations.map((rec, idx) => (
+                                        <div key={idx}>{idx + 1}. {rec}</div>
+                                    ))}
+                                </div>
+                            )}
+                            {showRecs && loading && (
+                                <div>Generating recommendations...</div>
+                            )}
                         </div>
                 </div>
                 <div id="tooltip" className="row-span-1">
-                    <span>Hover one of the nodes!</span>
+                    <span className="text-white">Hover one of the nodes!</span>
                 </div>
             </div>
             

@@ -1,14 +1,19 @@
 import * as d3 from "d3";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 
 export function Graph(props: any) {
   const svgRef = useRef(null);
         // @ts-ignore
   let width = props.width,
         // @ts-ignore
-      height = props.height;
+      height = props.height,
+        // @ts-ignore
+      onSelectSong = props.onSelectSong;
   
-  d3.csv("subgraph.csv", function(d) {
+  useEffect(() => {
+    if (!svgRef.current) return;
+    
+  d3.csv("/subgraph.csv", function(d) {
     return {
       source: d.source,
       target: d.target,
@@ -85,7 +90,18 @@ export function Graph(props: any) {
         .classed("fixed", d => d.fx !== undefined)
         .call(call)
             .on("dblclick", drag_doubleclick)
-            .on("mouseover", mouseover);
+            .on("mouseover", mouseover)
+            .on("click", function(d: any) {
+              // Check if this is a song node (has artist info)
+              for (const item of data) {
+                if (item.s_attribute == "song" && (item["source"]["name"] == d.name || item["target"]["name"] == d.name)) {
+                  if (onSelectSong) {
+                    onSelectSong(d.name);
+                  }
+                  return;
+                }
+              }
+            });
   
     function mouseover(d: any) {
       let artist;
@@ -250,6 +266,8 @@ export function Graph(props: any) {
   }).catch(function(error) {
     console.log(error);
   });
+  }, [svgRef, onSelectSong, width, height]);
+  
   return (
     <svg ref={svgRef} width={width} height={height} className="border-solid border-1 border-sky-500 col-span-3"/>
   );

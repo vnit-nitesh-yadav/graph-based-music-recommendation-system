@@ -4,7 +4,8 @@ import Head from "next/head";
 import { useState } from "react";
 
 export default function Home() {
-  const file = useState(null);
+  const [selectedSong, setSelectedSong] = useState<string | null>(null);
+  
   return (
     <>
       <Head>
@@ -15,9 +16,9 @@ export default function Home() {
       </Head>
       <main>
       <div className="grid grid-cols-4" id="main">
-        <Sidebar file={file}/>
+        <Sidebar selectedSong={selectedSong} />
         <div id="graph" className="col-span-3">
-          <Graph width={1200} height={900} file={file}/>
+          <Graph width={1200} height={900} onSelectSong={setSelectedSong}/>
         </div>
       </div>
       </main>
